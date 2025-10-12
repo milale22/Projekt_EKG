@@ -1,0 +1,32 @@
+Title: ECG-Capable Smartwatches: Assessing Their Clinical Accuracy and Application
+
+This database contains raw data, transformed to WDFB format, generated using a Patient Simulator, the METRON PS-440, and measured with 5 different devices: (i) hospital electrocardiograph model Philips TC30; (ii) Apple Watch Series 9; (iii) Samsung Galaxy Watch 6; (iv) Fitbit Sense 2; and (v) Withings ScanWatch.
+
+The database is organised using a directory for each device:
+
+1. philips_tc30: Raw data in WDFB format for the Philips TC30 hospital electrocardiograph.
+2. applewatch_serie8: Raw data in WDFB format for Apple Watch Series 9.
+3. samsunggalaxy6: Raw data in WDFB format for the Samsung Galaxy Watch 6.
+4. fitbitsense2: Raw data in WDFB format for the Fitbit Sense 2.
+5. withingsscanwatch: Raw data in WDFB format for Withings ScanWatch.
+
+For each device the database contains the following records, all experiments in quintuplicate:
+
+- amp_test 4 experiments:
+  - amp500: records amp500_0 to amp500_4 corresponding to an ECG signal of 500µV amplitude.
+    ...
+  - amp2000: records amp2000_0 to amp2000_4 corresponding to an ECG signal of 2000µV amplitude.
+
+- freq_test 15 experimentos:
+  - f30: records f30_0 to f30_4 corresponding to a 30 BPM ECG signal.
+    ...
+  - f300: records f300_0 to f300_4 corresponding to a 300 BPM ECG signal.
+
+- sqr-2hz: sqr-2hz_0 to sqr-2hz_4 registers corresponding to a square wave signal with a frequency of 2 Hz.
+
+- st-segment 16 experiments:
+  - st-m8: st-m8_0 to st-m8_4 records corresponding to an ECG signal with ST-segment depression of -800µV.
+    ...
+  - st-p8: st-p8_0 to st-p8_4 records corresponding to an ECG signal with ST-segment elevation of +800µV.
+
+The database contains a total of 915 records.
