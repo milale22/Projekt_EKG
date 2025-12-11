@@ -7,7 +7,7 @@ Dieses Projekt befasst sich mit der Entwicklung eines Webdienstes zur automatisc
 ---
 
 ## Projektbeschreibung
-Grundlage dieses Projekt ist ein auf Kaggle veröffentlichtes Notebook, das auf den PTB-XL-Datensatz basiert: 
+Grundlage dieses Projekts ist ein auf Kaggle veröffentlichtes Notebook, das auf den PTB-XL-Datensatz basiert: 
 https://www.kaggle.com/code/likith012/ecgnet-ptb-xl
 
 PTB-XL-Datensatz: https://physionet.org/content/ptb-xl/1.0.3/
@@ -45,16 +45,16 @@ Das Projekt besteht aus mehreren Modulen:
 
   ## Nutzung
 
-  FÜr die Nutzung werden die Dateien aus den Ordnern **artifacts** und **ecg_project** benötigt. Die im Ordner **artifacts** enthaltenen Dateien werden beim Start geladen.
+  Für die Nutzung werden die Dateien aus den Ordnern **artifacts** und **ecg_project** benötigt. Die im Ordner **artifacts** enthaltenen Dateien werden beim Start geladen.
 
   ### Start des Webdienstes
 
   In das Verzeichnis wechseln, das den Ordner **ecg_project** enthält und folgenden Befehl ausführen:
 
-  **uvicorn ecg_project.api:app --reload**
+  **`uvicorn ecg_project.api:app --reload`**
 
   
-  Bei einem erfolgreichem Start erscheint z.B.:
+  Bei einem erfolgreichen Start erscheint z.B.:
   
   INFO:     Started server process [77104]
   
@@ -67,7 +67,7 @@ Das Projekt besteht aus mehreren Modulen:
 
   Anschließend ist der Webdienst erreichbar unter:
 
-  http://127.0.0.1:8000
+  `http://127.0.0.1:8000`
 
   Dort sollte folgende Meldung erscheinen: 
 
@@ -76,16 +76,20 @@ Das Projekt besteht aus mehreren Modulen:
 
   Die interaktive API-Doku kann nun über folgenden Link aufgerufen werden:
 
-  http://127.0.0.1:8000/docs
+  `http://127.0.0.1:8000/docs`
 
   Dort kann eine EKG-Datei über den POST-Endpunkt hochgeladen und direkt getestet werden.
 
   Alternativ kann parallel das Skript gestartet werden:
 
-  **python client.py**  
+  **`python client.py`**  
   
   Dabei muss der Pfad zur EKG-Datei angegeben werden, um eine Klassifikation zu erhalten. 
 
+  ### Testen
+  Im Ordner **`ptbxl/ptbxl_test_zips`** stehen Test-ZIP-Dateien aus dem PTB-XL-Datensatz zur Verfügung. Diese können zum Testen direkt an den Webdienst gesendet werden (über API-Oberfläche (`/docs`) oder über das Skript `client.py`).
+
+  Zusätzlich stehen zwei Beispiel-CSV-Dateien zur Verfügung, die ebenfalls zur Klassifikation genutzt werden können.
   --- 
   ## Hinweis
   Projekt dient ausschließlich zu Demonstrations- und Forschungszwecken und ist **KEIN** medizinisch zugelassenes Diagnosesystem
