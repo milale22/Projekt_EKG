@@ -16,7 +16,6 @@ if not os.path.exists(file_name):
 # URL des Diagnose Endpunkts der FastAPI
 url = "http://127.0.0.1:8000/diagnosis"
 
-
 try:
     # Öffnen der Datei im Binärmodus und an API senden
     with open(file_name, "rb") as file:
