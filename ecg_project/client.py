@@ -52,6 +52,3 @@ try:
 except ValueError:
     print("Server hat kein JSON zurückgegeben")
     exit(1)
-
-
-
