@@ -1,155 +1,147 @@
-import tempfile
-import zipfile
-from io import BytesIO
-from os import listdir, path
 from pathlib import Path
-
 import joblib
 import numpy as np
-import wfdb
 from scipy.signal import spectrogram, resample
 
-#SCALER_PATH = "../artifacts/scaler.pkl"
-#CLASSES_PATH = "../artifacts/classes.pkl"
 
+
+
+# Ordner wo diese Datei liegt
 HERE = Path(__file__).resolve().parent
 
 # Projekt-Root (eine Ebene höher)
 ROOT = HERE.parent
 # artifacts/-Ordner im Projekt-Root
 ARTIFACTS = ROOT / "artifacts"
-
-
+# Pfad zum Scaler
 SCALER_PATH = ARTIFACTS / "scaler.pkl"
+# Pfad zu den Klassenlabels
 CLASSES_PATH = ARTIFACTS / "classes.pkl"
 
-
+# Laden des Scalers
 try:
     scaler = joblib.load(SCALER_PATH)
 except Exception:
     scaler = None
 
+
+# Laden der Klassenlabels
 try:
     classes = joblib.load(CLASSES_PATH)  # ['CD','NORM','STTC']
 except Exception:
-    classes = ['CD','NORM','STTC']       # fallback
+    # Fallback falls Datei nicht vorhanden oder nicht funktioniert
+    classes = ['CD','NORM','STTC']
 
-# Standardizing function
+# Funktion zum Standardisieren des EKGs
 def standardizing(ecg_data):
+    # ecg_data wird in 2D gebracht
+    # -1: Länge automatisch selbst berechnen
     ecg2d = ecg_data.reshape(-1, 1)
+
+    # geladene Scaler nutzen um Werte zu standardisieren
     if scaler is not None:
         ecg_scaled = scaler.transform(ecg2d)
+    # falls Scaler nicht korrekt geladen wurde, manuelle Standardisierung
     else:
+        # Mittelwert der Werte berechnen
+        # axis = 0: über alle Zeilen/Samples; Ergbnis bleibt 2D (1,1)
         mu = ecg2d.mean(axis=0, keepdims=True)
+        # Standardabweichung berechnen
+        # + 1e-8 um Division durch 0 zu vermeiden
         sd = ecg2d.std(axis=0, keepdims=True) + 1e-8
-        ecg_scaled = (ecg2d - mu) / sd
-    return ecg_scaled
-    #return ecg_scaled.reshape(ecg_data.shape).astype('float')
 
-# Spectrogram function
+        # Standardisierung = (Wert - Mittelwert)/Standardabweichung
+        # Ergebnis: Verteilung mit Mittelwert ~0 und Standardabweichung ~1
+        ecg_scaled = (ecg2d - mu) / sd
+
+    # standardisierte EKG mit Shape (N,1) zurückgeben
+    return ecg_scaled
+
+
+# Funktion, die aus dem EKG ein Spektrogramm (Zeit-Frequenz-Darstellung) erzeugt
 def create_specto(ecg_data, fs=100, nperseg=40, noverlap=10, freq_bands=13):
+    # ecg_data in numpy array umwandeln und überflüssige Dimensionen entfernen
+    # zb aus (1000,1) wird (1000,)
     sig = np.asarray(ecg_data).squeeze()
+    # nper = tatsächliche Fenstergröße
+    # Minimum aus gewünschter Fensterlänge (nperseg) und Signallänge nehmen, falls Signal kürzer als nperseg ist
     nper = min(nperseg, sig.shape[0])
+
+    # nover = tatsächliche Überlappung zwischen Fenstern
+    # darf nicht größer als nper-1 und nicht größer als noverlap sein
     nover = min(noverlap, max(0, nper - 1))
 
+    # Spektrogramm berechnen
+    # f = Frequenzachse, t = Zeitachsen Werte, Sxx = Spektrogramm
     f, t, Sxx = spectrogram(sig, fs=fs, nperseg=nper, noverlap=nover)
 
+    # nur die ersten freq_bands Frequenzbänder werden behalten
+    # Sxx ursprünglich (Anzahl Frequenzen, Anzahl Zeitfenster)
+    # durch Transpose: (Anzahl Zeitfenster, freq_bands)
     Sxx = Sxx[:freq_bands].transpose()
+    # log anwenden, um große Werte abzuflachen und +1e-8 um log(0) zu verhindern
     Sxx = np.log(Sxx + 1e-8)
 
-
+    # Spektrogramm zurückgeben
     return Sxx
 
-
+# Funktion, die aus dem EKG die beiden Modell Inputs baut
+# x1 = standardisierte Rohsignal, x2 = Spektrogramm
 def make_model_inputs(ecg_data):
 
+    # zuerst EKG standardisieren
     ecg_std = standardizing(ecg_data)
 
+    # Prüfen, ob die Form genau (1000,1) ist
+    # 1000 Samples und ein Kanal
+    # Modell erwartet dieses Größe bei zehn Sekunden bei 100 Hz
     if ecg_std.shape != (1000, 1):
         raise ValueError(
-            f"Falsches Input-Shape: erwartet wird (1000,1), aber bekommen {ecg_data.shape}"
+            f"Falsches Input-Shape: erwartet wird (1000,1), aber bekommen {ecg_std.shape}"
         )
 
 
-
+    # aus standardisierten Signalen Spektrogramm erzeugen
     spec = create_specto(ecg_std)
 
+    # x1 = Rohsignal mit zusätzlicher Batch Dimension (1, 1000, 1)
     x1 = ecg_std[None, ...]
+    # x2 = Spektrogramm mit zusätzlicher Batch Dimension (1, T, freq_bands)
     x2 = spec[None, ...]
 
+    # Inputs zurückgeben
     return x1, x2
 
 
-# 10 sekunden
+# Funktion zum Resampling: prüft auf Dauer, Umwandlung auf neue Abtastrate
 def resampling(ecg_data, fs_in:int, sec=10, fs_out=100):
+    # ecg_data in 2D: (N, 1)
     ecg2d = ecg_data[:, None]
-    len_in = sec * fs_in
+
+    # len_in = wie viele Samples sollten 10 Sekunden bei der eingegangenen Abtastrate haben
+    len_in = int(sec * fs_in)
+
+    # wenn das Signal zu kurz ist (kürzer als 10 Sekunden)
+    if len(ecg2d) < len_in:
+        raise ValueError(
+            f"EKG zu kurz, wird mindestens {sec} Sekunden benötigt, bekommt aber {len(ecg2d)} Sekunden."
+        )
+
+    # wenn das Signal zu lang ist (länger als 10 Sekunden)
     if len(ecg2d) > len_in:
-       ecg2d = ecg2d[:len_in]     # cut die samples der ersten 10 sekunden
+        # auf die ersten len_in Samples reduzieren
+        # nur die ersten sec Sekunden werden behalten
+        ecg2d = ecg2d[:len_in]
 
 
-    # Resampling auf fs_out
-    len_out = sec * fs_out
+    # Resampling auf neue Abtastrate fs_out
+    # len_out = Anzahl der Samples am Ende
+    len_out = int(sec * fs_out)
+    # skaliert das Signal von len_in auf len_out Punkze
     ecg_resampled = resample(ecg2d, len_out)
 
+    # resampelte Signal zurückgeben (len_out, 1)
     #return ecg_resampled.reshape(-1, 1)
     return ecg_resampled
-    # TODO Fehler bei unter 10 sekunden: fehlermeldung ekg muss mindestens 10 sekunden lang sein
-
-
-def check_format(filename:str):
-    import os
-    ext = os.path.splitext(filename)[1]
-    if ext in (".csv", ".json", ".zip"):
-        return{
-            ".csv": "csv", ".json": "json", ".zip": "wfdb_zip"}[ext]
-
-    raise ValueError(f"Dateiformat {ext} wird nicht unterstützt. Nur .csv, .json und .zip (mit .hea + .dat) sind erlaubt.")
-
-# TODO: Prüfen auf die verschiedenene Formate, was bei jeweiligem Format getan werden muss
-
-def load_ecg_file(filename:str, content:bytes):
-    kind = check_format(filename)
-    '''
-    if kind == "csv":
-        #load_ecg_csv(content)
-
-    elif kind == "json":
-        #load_ecg_json(content)
-
-    elif kind == "wfdb_zip":
-        load_ecg_wfdb_zip(content)
-    '''
-    if kind == "wfdb_zip":
-        return load_ecg_wfdb_zip(content)
-
-# TODO: CSV laden
-#def load_ecg_csv(content:bytes):
-
-# TODO: JSON laden
-#def load_ecg_json(content:bytes):
-
-def load_ecg_wfdb_zip(content:bytes):
-    with tempfile.TemporaryDirectory() as tmpdirname:
-
-        with zipfile.ZipFile(BytesIO(content)) as zip_ref:
-            zip_ref.extractall(tmpdirname)
-
-        names = listdir(tmpdirname)
-        hea_bases = {path.splitext(n)[0] for n in names if n.lower().endswith(".hea")}
-        dat_bases = {path.splitext(n)[0] for n in names if n.lower().endswith(".dat")}
-
-        pairs = sorted(hea_bases & dat_bases)  # Schnittmenge
-        if not pairs:
-           raise ValueError("Kein .hea/.dat-Paar im ZIP gefunden.")
-
-        base = path.join(tmpdirname, pairs[0])
-
-        rec = wfdb.rdrecord(base)
-        signal = rec.p_signal[:, 0]  # nur die erste Ableitung
-        fs = rec.fs
-
-
-        return signal, fs
 
 
