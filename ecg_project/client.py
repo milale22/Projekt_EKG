@@ -1,6 +1,7 @@
 import requests
 import os
 print("Herzlich Willkommen zum EKG-Diagnose-Client!")
+print("Hinweis: Dieses Programm ersetzt keine ärztliche Diagnose.")
 print("Bitte eine EKG-Datei angeben (.zip oder .csv)")
 
 # Nutzer gibt Datei an
@@ -43,6 +44,9 @@ if response.status_code != 200:
 try:
     data = response.json()
     print("Antwort vom Server: ", data)
+    print("NORM steht für normales EKG")
+    print("CD steht für Leitungsstörung - Bitte an Arzt wenden")
+    print("STTC steht für ST/T-Änderung - Bitte an Arzt wenden")
 
 except ValueError:
     print("Server hat kein JSON zurückgegeben")
