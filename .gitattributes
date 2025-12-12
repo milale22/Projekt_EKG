@@ -5,3 +5,5 @@ electrocardiogram-capable-smartwatches-assessing-their-clinical-accuracy-and-app
 electrocardiogram-capable-smartwatches-assessing-their-clinical-accuracy-and-application-1.0.0/**/*.dat filter=lfs diff=lfs merge=lfs -text
 *.hdf5 filter=lfs diff=lfs merge=lfs -text
 artifacts/*.npz filter=lfs diff=lfs merge=lfs -text
+*.csv filter=lfs diff=lfs merge=lfs -text
+ptbxl/ptbxl_test_zips/*.zip filter=lfs diff=lfs merge=lfs -text
