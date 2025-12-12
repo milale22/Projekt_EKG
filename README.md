@@ -87,9 +87,29 @@ Das Projekt besteht aus mehreren Modulen:
   Dabei muss der Pfad zur EKG-Datei angegeben werden, um eine Klassifikation zu erhalten. 
 
   ### Testen
-  Im Ordner **`ptbxl/ptbxl_test_zips`** stehen Test-ZIP-Dateien aus dem PTB-XL-Datensatz zur Verfügung. Diese können zum Testen direkt an den Webdienst gesendet werden (über API-Oberfläche (`/docs`) oder über das Skript `client.py`).
+  Im Ordner **`ptbxl/ptbxl_test_zips`** stehen Test-ZIP-Dateien aus dem PTB-XL-Datensatz zur Verfügung. Diese können zum Testen direkt an den Webdienst gesendet werden (über API-Oberfläche (`/docs`) oder über das Skript `client.py`). 
+  
+  Zusätzlich stehen zwei Beispiel-CSV-Dateien zur Verfügung, die ebenfalls zur Klassidikation genutzt werden können.
 
-  Zusätzlich stehen zwei Beispiel-CSV-Dateien zur Verfügung, die ebenfalls zur Klassifikation genutzt werden können.
+  ### Ergebnis
+
+  Das Ergebnis der Klassifikation könnte z.B. so aussehen: 
+
+  {
+  "resourceType": "DiagnosticReport",
+  "status": "final",
+  "category": "EG",
+  "code": {
+    "text": "ECG analysis"
+  },
+  "note": [
+    {
+      "text": "Confidence: 62.79%"
+    }
+  ],
+  "conclusion": "NORM"
+}
+
   --- 
   ## Hinweis
   Projekt dient ausschließlich zu Demonstrations- und Forschungszwecken und ist **KEIN** medizinisch zugelassenes Diagnosesystem
