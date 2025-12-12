@@ -1,5 +1,6 @@
 import requests
 import os
+
 print("Herzlich Willkommen zum EKG-Diagnose-Client!")
 print("Hinweis: Dieses Programm ersetzt keine ärztliche Diagnose.")
 print("Bitte eine EKG-Datei angeben (.zip oder .csv)")
